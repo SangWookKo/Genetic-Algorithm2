@@ -15,7 +15,7 @@ Genetic algorithms (GAs) are stochastic search algorithms inspired by the basic 
 * Local search using general-purpose optimisation algorithms can be applied stochastically to exploit interesting regions.
 * GAs can be run sequentially or in parallel, using an explicit master-slave paralleisation or a coarse-grain islands approach.
 
-This document gives a quick tour of GA(version 3.1.1) functionalities. It was originally written in R Markdown, using the __knitr__ package for production. Further details are provided in the papers Scrucca(2013) and Scrucca(2017). 
+This document gives a quick tour of GA(version 3.1.1) functionalities. It was originally written in R Markdown, using the <u>knitr</u> package for production. Further details are provided in the papers Scrucca(2013) and Scrucca(2017). 
 See also help(package="GA") for a list of available functions and methods.
 
 ``` 
