@@ -28,3 +28,6 @@ Type 'citiation("GA")' for citing this R package in publications.
 
 <u>dsfsdf</u>
 ==sdfs==
+<center> dfsfd </center>
+
+sdfsdf
