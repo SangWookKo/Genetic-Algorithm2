@@ -93,8 +93,126 @@ The GA search process can be visualised by defining a monitoring function as fol
     points(obj@population, pch = 20, col = 2)
     Sys.sleep(0.2)  
   }
-    ```
 
+GA <- ga(type = "real-valued",
+         fitness = function(x) -Rastrigin(x[1],x[2]),
+         lower = c(-5.12, -5.12), upper = c(5.12, 5.12),
+         popSize = 50, maxiter = 100,
+         monitor = monitor)
+```
+## Setting some members of the initial population
+
+The *suggestions* argument to *ga()* function call can be used to provide a matrix of solutions to be included in the initial population.
+
+For example, consider the optimisation of the Rastrigin function introduced above:
+
+```
+  suggestedSol <- matrix(c(0.2,1.5,-1.5,0.5), nrow = 2, ncol = 2, byrow = TRUE)
   
+  GA1 <- ga(type = "real-valued",
+            fitness = function(x) -Rastrigin(x[1],x[2]),
+            lower = c(-5.12, -5.12), upper = c(5.12, 5.12),
+            suggestions = suggestedSol,
+            popSize = 50, maxiter = 1)
+ head(GA1@population)
+  
+```
+As it can be seen, the first two solutions considered are those provided, whereas the rest is filled randomly as usual.
+A full search can be obtained as follows:
+
+```
+  GA <- ga(type = "real-valued",
+          fitness = function(x) -Rastrigin(x[1],x[2]),
+          lower = c(-5.12,-5.12), upper = c(5.12,5.12),
+          suggestions = suggestedSol,
+          popSize = 50, maxiter = 100)
+ summary(GA)
+```
+
+## Constrained optimisation
+
+This example shows how to minimize an objective function subject to nonlinear inequality constraints and bounds using GAs.
+Source : http://www.mathworks.it/it/help/gads/examples/constrained-minimization-using-the-genetic-algorithm.html
+
+We want to minimize a simple function of two variables x1 and x2
+    
+          min f(x) = 100(x1^2-x2)^2 + (1-x1)^2;
+           x 
+subject to the following nonlinear inequality constraints and bounds:
+
+* x1x2 + x1 - x2 + 1.5 <= 0 (inequality constraint),
+* 10 - x1x2 <= 0 (inequality constraint),
+* 0 <= x1 <= 1 (bounds), and
+* 0 <= x2 <= 13 (bounds).
+
+The above fitness function is known as "cam" as described in L.C.W. Dixon and G.P. Szego(eds.), __Towards Global Optimisation 2__, North-Holland, Amsterdam, 1978.
+
+```
+    f <- function(x) 
+    { 100 * (x[1]^2 - x[2])^2 + (1 - x[1])^2}
+    
+    c1 <- function(x) 
+    {x[1]*x[2] + x[1] - x[2] + 1.5}
+    c2 <- function(x) 
+    { 10 - x[1]*x[2]}
+```
+
+Plot the function and the feasible regions(coloured areas):
+
+```
+ngrid <- 250
+x1 <- seq(0,1, length = ngrid)
+x2 <- seq(0, 13, length = ngrid)
+x12 <- expand.grid(x1,x2)
+
+col <- adjustcolor(bl12gr.colors(4)[2:3], alpha = 0.2)
+plot(x1, x2, type ="n", xaxs = "i", yaxs = "i")
+image(x1, x2, matrix(ifelse(apply(x12,1,c1) <= 0,0,NA), ngrid, ngrid), col = col[1], add= TRUE)
+image(x1,x2, matrix(ifelse(apply(x12,1,c2) <= 0,0,NA), ngrid, ngrid), col = col[2], add = TRUE)
+contour(x1, x2, matrix(apply(x12,1,f), ngrid,ngrid), nlevels = 21, add = TRUE)
+```
+
+A GA solution can be obtained by defining a penalised fitness function:
+
+``` 
+  fitness <- function(x) 
+  { 
+    f <- -f(x) # we need to maximise -f(x)
+    pen <- sqrt(.Machine$double.xmax) # penalty term
+    penalty1 <- max(c1(x), 0)*pen # penalisation for 1st inequality constraint
+    penalty2 <- max(c2(x), 0)*pen # penalisation for 2nd inequality constraint
+    f - penalty1 - penalty2   # fitness function value
+    
+  }
+```
+
+Then 
+
+```
+GA <- ga("real-valued", fitness = fitness, lower = c(0,0), upper= c(1,13),
+          # selection = GA:::gareal_lsSelection_R,
+          maxiter = 1000, run = 200, seed = 123)
+          
+summary(GA)          
+
+fitness(GA@solution)
+f(GA@solution)
+c1(GA@solution)
+c2(GA@solution)
+
+```
+
+A graph showing the solution found is obtained as:
+
+```
+ plot(x1, x2, type = "n", xaxs = "i", yaxs = "i")
+image(x1, x2, matrix(ifelse(apply(x12, 1, c1) <= 0, 0, NA), ngrid, ngrid), 
+      col = col[1], add = TRUE)
+image(x1, x2, matrix(ifelse(apply(x12, 1, c2) <= 0, 0, NA), ngrid, ngrid), 
+      col = col[2], add = TRUE)
+contour(x1, x2, matrix(apply(x12, 1, f), ngrid, ngrid), 
+        nlevels = 21, add = TRUE)
+points(GA@solution[1], GA@solution[2], col = "dodgerblue3", pch = 3)  # GA solution
+```
   
   
