@@ -20,7 +20,8 @@ See also help(package="GA") for a list of available functions and methods.
 
 ``` 
 library(GA)
-# dfs 
-*sdfs * sdfsdf
- Type 'citiation("GA")' for citing this R package in publications.
+
+Type 'citiation("GA")' for citing this R package in publications.
 ```
+
+## Function optimisation in one dimension
