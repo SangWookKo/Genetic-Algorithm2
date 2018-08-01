@@ -25,3 +25,5 @@ Type 'citiation("GA")' for citing this R package in publications.
 ```
 
 ## Function optimisation in one dimension
+
+<u> dsfsdf </u>
