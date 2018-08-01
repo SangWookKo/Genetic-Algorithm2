@@ -18,8 +18,9 @@ Genetic algorithms (GAs) are stochastic search algorithms inspired by the basic 
 This document gives a quick tour of GA(version 3.1.1) functionalities. It was originally written in R Markdown, using the [knitr] package for production. Further details are provided in the papers Scrucca(2013) and Scrucca(2017). 
 See also help(package="GA") for a list of available functions and methods.
 
-library(GA)
-
 ``` 
-fdsgsdgsgs
+library(GA)
+# dfs 
+*sdfs * sdfsdf
+ Type 'citiation("GA")' for citing this R package in publications.
 ```
