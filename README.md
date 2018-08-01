@@ -26,8 +26,75 @@ Type 'citiation("GA")' for citing this R package in publications.
 
 ## Function optimisation in one dimension
 
-<u>dsfsdf</u>
-==sdfs==
-<center> dfsfd </center>
+Consider the function *f(x) = (x^2 + x) cos(x)* defined over the range -10 <= *x* <= 10:
 
-sdfsdf
+```
+f <- function(x) (x^2 + x) * cos(x)
+lbound <- -10; ubound <- 10
+curve(f, from = lbound, to ubound, n = 1000)
+```
+
+```
+  GA <- ga(type = "real-valued", fitness = f, lower = c(th = lbound), upper = ubound)
+  summary(GA)
+```
+
+```
+  curve(f, from = lbound, to = ubound, n = 1000)
+  points(GA@solution, GA@fitnessValue, col = 2, pch = 19)
+```
+
+## Function Optimisation in two dimensions
+
+Consider the Rastrigin function, a non-convex function often used as a test problem for optimisation algorithms because it is a difficult problem due to its large number of local minima. 
+
+In two dimensions it is defined as 
+
+*f(x1,x2) = 20 + x1^2 + x2^2 - 10(cos(2 pie x1) + cos(2 pie x2)), with -5.12 <= xi <= 5.12 for i = 1,2. 
+It has a global minimum at (0,0) where f(0,0) = 0.
+
+```
+Rastrigin <- function(x1, x2)
+{
+  20 + x1^2 + x2^2 - 10*(cos(2*pi*x1) + cos(2*pi*x2))
+}
+
+
+x1 <- x2 <- seq(-5.12, 5.12, by = 0.1)
+f <- outer(x1, x2, Rastrigin)
+persp3D(x1, x2, f, theta = 50, phi = 20, color.palette = bl2gr.colors)
+```
+
+```
+  filled.contour(x1, x2, f, color.palette = bl2gr.colors)
+```
+
+A GA minimisation search is obtained as follows( note the minus sign used in the definition of the local fitness function):
+
+``` 
+    GA <- ga(type = "real-valued",
+             fitness = function(x) - Rastrigin(x[1], x[2]),
+             lower = c(-5.12, -5.12) , upper = c(5.12,5.12),
+             popSize = 50, maxiter = 1000, run = 100)
+    summary(GA)         
+```
+
+```
+filled.contour(x1, x2, f, color.palette = bl2gr.colors, plot.axes = { axis(1); axis(2); points(GA@solution[,1], GA@solution[,2], pch = 3, cex = 2, col = "white", lwd= 2)} )
+```
+
+The GA search process can be visualised by defining a monitoring function as follows:
+
+``` 
+  monitor <- function(obj)
+  {
+    contour(x1, x2, f, drawlabels = FALSE, col = grey(0.5))
+    title(paste("iteration = ", obj@iter), font.main = 1)
+    points(obj@population, pch = 20, col = 2)
+    Sys.sleep(0.2)  
+  }
+    ```
+
+  
+  
+  
