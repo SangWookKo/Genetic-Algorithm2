@@ -179,8 +179,7 @@ A GA solution can be obtained by defining a penalised fitness function:
   { 
     f <- -f(x) # we need to maximise -f(x)
     pen <- sqrt(.Machine$double.xmax) # penalty term
-    penalty1 <- max(c1(x), 0)*pen # penalisation for 1st inequality constraint
-    penalty2 <- max(c2(x), 0)*pen # penalisation for 2nd inequality constraint
+    penalty1 <- max(c1(x), 0)*pen # penalisation for 1st inequality constraint    penalty2 <- max(c2(x), 0)*pen # penalisation for 2nd inequality constraint
     f - penalty1 - penalty2   # fitness function value
     
   }
@@ -199,7 +198,6 @@ fitness(GA@solution)
 f(GA@solution)
 c1(GA@solution)
 c2(GA@solution)
-
 ```
 
 A graph showing the solution found is obtained as:
@@ -209,10 +207,183 @@ A graph showing the solution found is obtained as:
 image(x1, x2, matrix(ifelse(apply(x12, 1, c1) <= 0, 0, NA), ngrid, ngrid), 
       col = col[1], add = TRUE)
 image(x1, x2, matrix(ifelse(apply(x12, 1, c2) <= 0, 0, NA), ngrid, ngrid), 
-      col = col[2], add = TRUE)
+`      col = col[2], add = TRUE)
 contour(x1, x2, matrix(apply(x12, 1, f), ngrid, ngrid), 
         nlevels = 21, add = TRUE)
 points(GA@solution[1], GA@solution[2], col = "dodgerblue3", pch = 3)  # GA solution
 ```
   
   
+## Hybrid GAs
+Hybrid Genetic Algorithms (HGAs) incorporate efficient local search algorithms into GAs. In case of real-valued optimisation problems, the GA package provides a simple way to start local searches from GA solutions after a certain number of iterations, so that, once a promising region is identified, the convergence to the global optimum can be speed up.
+
+`The use of HGAs is controlled by the optional argument optim = TRUE (by default is set to FALSE). Local searches are executed using the base R function optim(), which makes available general-purpose optimisation methods, such as Nelder–Mead, quasi-Newton with and without box constraints, and conjugate-gradient algorithms. The local search method to be used and other parameters are controlled with the optional argument optimArgs, which must be a list with the following structure and defaults:
+
+```
+optimArgs = list(method = "L-BFGS-B",
+                 poptim = 0.05,
+                 pressel = 0.5,
+                 control = list(fnscale = -1, maxit = 100))
+
+GA <- ga(type = "real-valued",
+         fitness = function(x) -Rastrigin(x[1], x[2]),
+         lower = c(-5.12,-5.12), upper = c(5.12, 5.12),
+         popSize = 50, maxiter = 1000, run = 100,
+         optim = TRUE)
+summary(GA)
+
+plot(GA)
+```
+For more details see help(ga).
+
+Consider again the two-dimensional Rastrigin function defined previously. A HGA search is obtained as follows:
+
+```
+GA <- ga(type = "real-valued",
+
+         fitness = function(x) -Rastrigin(x[1], x[2]),
+         lower = c(-5.12,-5.12), upper = c(5.12, 5.12),
+         popSize = 50, maxiter = 1000, run = 100,
+         optim = TRUE)
+
+summary(GA)
+
+plot(GA)
+```
+Note the improved solution obtained.
+
+## Parallel computing 
+
+By default searches performed using the GA package occour sequentially. In some cases, particularly when the evaluation of the fitness function is time consuming, parallelisation of the search algorithm may be able to speedup computing time. Starting with version 2.0, the GA package provides facilities for implementing parallelisation of genetic algorithms.
+Parallel computing with GA requires the following packages to be installed: parallel (available in base R), doParallel, foreach, and iterators.
+To use parallel computing with the GA package on a single machine with multiple cores is simple as manipulating the optional argument parallel in the ga() function call.
+The argument parallel can be a logical argument specifying if parallel computing should be used (TRUE) or not (FALSE, default) for evaluating the fitness function. This argument could also be used to specify the number of cores to employ; by default, this is taken from detectCores() function in parallel package.
+Two types of parallel functionality are implemented depending on system OS: on Windows only snow type functionality is available, while on POSIX operating systems, such as Unix, GNU/Linux, and Mac OSX, both snow and multicore (default) functionalities are available. In the latter case a string can be used to specify which parallelisation method should be used.
+In all cases described above, at the end of GA iterations the cluster is automatically stopped by shutting down the workers.
+Consider the following simple example where a pause statement is introduced to simulate an expensive fitness function.
+
+```
+fitness <- function(x)
+{
+  Sys.sleep(0.01)
+  x*runif(1)
+} 
+install.packages("parallel")
+library(parallel)
+install.packages("doParallel")
+library(doParallel)
+install.packages("rbenchmark")
+library(rbenchmark)
+
+out <- benchmark(GA1 = ga(type = "real-valued",
+                          fitness = fitness, lower = 0, upper = 1,
+                          popSize = 50, maxiter = 100, monitor = FALSE,
+                          seed = 12345),
+                 
+                 GA2 = ga(type = "real-valued", 
+                          fitness = fitness, lower = 0, upper = 1,
+                          popSize = 50, maxiter = 100, monitor = FALSE,
+                          seed = 12345, parallel = TRUE),
+                 GA3 = ga(type = "real-valued", 
+                          fitness = fitness, lower = 0, upper = 1,
+                          popSize = 50, maxiter = 100, monitor = FALSE,
+                          seed = 12345, parallel = 2),
+                 GA4 = ga(type = "real-valued", 
+                          fitness = fitness, lower = 0, upper = 1,
+                          popSize = 50, maxiter = 100, monitor = FALSE,
+                          seed = 12345, parallel = "snow"),          
+
+
+                 columns = c("test", "replications", "elapsed", "relative"),
+                 order = "test",
+                 replications = 10)
+                          
+out$average <- with(out, average <- elapsed/replications)
+out[,c(1:3,5,4)]
+
+```
+If a cluster of multiple machines is available, ga() can be executed in parallel using all, or a subset of, the cores available to the machines belonging to the cluster. However, this option requires more work from the user, who needs to set up and register a parallel back end.
+For instance, suppose that we want to create a cluster of two computers having IP addresses 141.250.100.1 and 141.250.105.3, respectively. For each computer we require 8 cores, so we aim at having a cluster of 16 cores evenly distributed on the two machines. Note that comunication between the master worker and the cluster nodes is done via SSH, so you should configure ssh to use password-less login. For more details see McCallum and Weston (2011, Chapter 2).
+
+```
+library(doParallel)
+workers <- rep(c("141.250.100.1", "141.250.105.3"), each = 8)
+cl <- makeCluster(workers, type = "PSOCK")
+registerDoParallel(cl)
+
+```
+
+## Island evolution
+
+GAs can be designed to evolve using an Island evolution approach. Here the population is partitioned in a set of subpopulations (islands) in which isolated GAs are executed on separated processor runs. Occasionally, some individuals from an island migrate to another island, thus allowing subpopulations to share genetic material
+This approach is implemented in the gaisl() function, which has the same input arguments as the ga() function, with the addition of the following argument:
+
+* numIslands : an integer value specifying the number of islands to use (by default is set to 4)
+* migrationRate : a value in the range (0,1) which gives the proportion of individuals that undergo migration between islands in every exchange (by default equal to 0.10)
+* migrationInterval : an integer value specifying the number of iterations at which exchange of individuals takes place (by default set at 10).
+
+Parallel computing is used by default in the Island evolution approach. Hybridisation by local search is also available as discussed previously.
+As an example, consider again the two-dimensional Rastrigin function. An Island GA search is obtained as follows:
+
+```
+GA <- gaisl(type = "real-valued",
+            fitness = function(x) -Rastrigin(x[1], x[2]),
+            lower = c(-5.12,-5.12), upper = c(5.12,5.12),
+            popSize = 100,
+            maxiter = 1000, run = 100,
+            numIslands = 4,
+            migrationRate = 0.2,
+            migrationInterval = 50)
+
+summary(GA)
+plot(GA, log= "x") 
+```
+## Memoization 
+
+In certain circumstances, particularly with binary GAs, memoization can be used to speed up calculations by using cached results. This is easily obtained using the memoise package
+
+```
+install.packages("memoise")
+library(memoise)
+install.packages("UsingR")
+library(UsingR)
+
+data(fat)
+summary(fat)
+str(fat)
+
+mod <- lm(body.fat.siri ~ age + weight + height + neck + chest + abdomen + hip + thigh + knee+ ankle + bicep + forearm + wrist, data = fat)
+
+head(mod)
+summary(mod)
+
+x <- model.matrix(mod)[,-1]
+y <- model.response(mod$model)
+
+fitness <- function(string){
+  
+mod <- lm(y ~ x[,string ==1])
+-BIC(mod)
+}
+
+library(memoise)
+mfitness <- memoise(fitness)
+
+is.memoised(fitness)
+
+is.memoised(mfitness)
+
+library(rbenchmark)
+tab <- benchmark(GA1 = ga("binary", fitness = fitness, nBits = ncol(x),
+                          popSize = 100, maxiter = 100, seed = 1, monitor = FALSE),
+                 GA2 = ga("binary", fitness = mfitness, nBits = ncol(x), 
+                          popSize = 100, maxiter = 100, seed = 1, monitor = FALSE),
+                 columns = c("test", "replications", "elapsed", "relative"),
+                 replications = 10)
+tab$average <- with(tab, elapsed/replications)
+tab
+
+# To clear cache use
+
+forget(mfitness)
+```
